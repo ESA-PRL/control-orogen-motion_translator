@@ -4,11 +4,9 @@
 
 Package transforming the joystick raw commands to motion commands for wheels, steering and PTU.
 
-**
-Authors: Karl Kangur
+**Authors: Karl Kangur
 Contact: Martin Azkarate
-Affiliation: Automatipon and Robotics Laboratories, ESTEC, ESA
-**
+Affiliation: Automatipon and Robotics Laboratories, ESTEC, ESA**
 
 ## Installation
 
@@ -37,13 +35,13 @@ Execute the following to build the package
 
 #### Inputs
 
-* `raw_command` (/controldev/RawCommand)
+* **`raw_command`** (/controldev/RawCommand)
 
 Raw messages coming from a joystick or gamepad.
 
 #### Outputs
 
-* `motion_command` (/base/MotionCommand2D)
+* **`motion_command`** (/base/MotionCommand2D)
 
 Motion commands directed to wheels and steering, for example for the [locomotion_control](https://github.com/hdpr-rover/control-orogen-locomotion_control) package.
 
