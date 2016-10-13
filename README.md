@@ -4,9 +4,10 @@
 
 Package transforming the joystick raw commands to motion commands for wheels, steering and PTU.
 
-**Authors: Karl Kangur
-Contact: Martin Azkarate
+**Authors: Karl Kangur  
+Contact: Martin Azkarate  
 Affiliation: Automatipon and Robotics Laboratories, ESTEC, ESA**
+
 
 ## Installation
 
@@ -28,6 +29,7 @@ In order to install, clone the latest version from this repository into your wor
 
 Execute the following to build the package
     $ autoproj build
+
 
 ## Basic Usage
 
