@@ -19,15 +19,18 @@ This package depends on the following packages:
 * [drivers/orogen/controldev](https://github.com/rock-drivers/drivers-orogen-controldev)
 
 To add the dependancies add these lines to `autoproj/manifest` file under `layout:`
-    - drivers/controldev
+
+    - drivers/controldev  
     - drivers/orogen/controldev
 
 ### Building
 
 In order to install, clone the latest version from this repository into your workspace under `control/orogen/motion_translator`, add the following line to `autoproj/manifest` under `layout:`
+
     - control/orogen/motion_translator
 
 Execute the following to build the package
+
     $ autoproj build
 
 
