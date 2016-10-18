@@ -6,18 +6,6 @@
 
 namespace motion_translator
 {
-    enum JoystickName
-    {
-        LEFT,
-        RIGHT
-    };
-    
-    enum AxisDirection
-    {
-        VERTICAL,
-        HORIZONTAL
-    };
-    
     // Button names are in order in which they appear in the vector
     enum ButtonName
     {
@@ -42,17 +30,35 @@ namespace motion_translator
         // Joystick current command input
         controldev::RawCommand joystick_command;
         
-        // Motion command sent out
-        base::MotionCommand2D motion_command;
+        // Local copy of incoming axis and button data from the joystick
         std::vector<std::vector<double> > axis;
         std::vector<uint8_t> buttons;
         
+        // Motion command sent to motors, contains translation and rotation speeds
+        base::MotionCommand2D motion_command;
+        
+        // PTU variables
+        double ptu_pan_angle;
+        double ptu_tilt_angle;
+        const double ptu_maxSpeed;
+        
+        // PTU movement limits (but cannot be consts as they are defined later)
+        const double ptu_maxPanAngle;
+        const double ptu_minPanAngle;
+        const double ptu_maxTiltAngle;
+        const double ptu_minTiltAngle;
+        
+        // Joystick axis values
         double axis_translation;
         double axis_rotation;
+        double axis_pan;
+        double axis_tilt;
+        
+        // Locomotion related parameters
         bool pointTurn;
         double speedRatio;
-        double speedRatioStep;
-        double minSpeedPointTurn;
+        const double speedRatioStep;
+        const double minSpeedPointTurn;
     public:
         Task(std::string const& name = "motion_translator::Task");
         Task(std::string const& name, RTT::ExecutionEngine* engine);

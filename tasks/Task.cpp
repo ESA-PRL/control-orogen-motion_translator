@@ -1,12 +1,29 @@
 #include "Task.hpp"
+#include <math.h>
 
 using namespace motion_translator;
 
-Task::Task(std::string const& name): TaskBase(name)
+Task::Task(std::string const& name):
+    TaskBase(name),
+    ptu_maxPanAngle(_ptuMaxPanAngle.get()),
+    ptu_minPanAngle(_ptuMinPanAngle.get()),
+    ptu_maxTiltAngle(_ptuMaxTiltAngle.get()),
+    ptu_minTiltAngle(_ptuMinTiltAngle.get()),
+    ptu_maxSpeed(_ptuMaxSpeed.get()),
+    minSpeedPointTurn(_minSpeedPointTurn.get()),
+    speedRatioStep(_speedRatioStep.get())
 {
 }
 
-Task::Task(std::string const& name, RTT::ExecutionEngine* engine): TaskBase(name, engine)
+Task::Task(std::string const& name, RTT::ExecutionEngine* engine):
+    TaskBase(name, engine),
+    ptu_maxPanAngle(_ptuMaxPanAngle.get()),
+    ptu_minPanAngle(_ptuMinPanAngle.get()),
+    ptu_maxTiltAngle(_ptuMaxTiltAngle.get()),
+    ptu_minTiltAngle(_ptuMinTiltAngle.get()),
+    ptu_maxSpeed(_ptuMaxSpeed.get()),
+    minSpeedPointTurn(_minSpeedPointTurn.get()),
+    speedRatioStep(_speedRatioStep.get())
 {
 }
 
@@ -27,14 +44,16 @@ bool Task::configureHook()
     
     axis_translation = 0.0;
     axis_rotation = 0.0;
+    axis_pan = 0.0;
+    axis_tilt = 0.0;
+    
+    ptu_pan_angle = 0.0;
+    ptu_tilt_angle = 0.0;
     
     pointTurn = false;
-    speedRatio = 0.0;
-    // These parameters are defined in motion_translator.orogen file
-    // Minimum translation speed in m/s before switching to point turn mode
-    minSpeedPointTurn = _minSpeedPointTurn.get();
-    // Step by which to increase the speedRatio
-    speedRatioStep = _speedRatioStep.get();
+    
+    // Minimum speed is the smallest step increment
+    speedRatio = speedRatioStep;
     
     return true;
 }
@@ -51,130 +70,151 @@ bool Task::startHook()
 void Task::updateHook()
 {
     TaskBase::updateHook();
-
+    
     // Process data from the joystick, sent regularly even when there are no changes
     if(_raw_command.read(joystick_command) == RTT::NewData)
-    {
+    {            
+        // TODO stop in case the communication with the joystick is lost (timeout), this process is called periodically, one can use a counter as the timeout
+        // TODO ignore first command from the joystick as it might not be sending any data (not sure if actually an issue), for some reason the wheels turn at the beginning
+        // When the joystick is not yet functional (a button has net been pressed) the receieved values are not set to 0 by default. Instead they are set to 1, -1, -1, -1 for the joystick axes.
+        
+        // The PTU is controlled in incremental mode, this must be called every time, regardless if changed or not
+        axis_pan = joystick_command.axisValue[0][2];
+        axis_tilt = -joystick_command.axisValue[1][0];
+        
+        if(axis_pan != 0)
+        {
+            // Make sure the PTU maximum and minimum pan values are not exceeded
+            double new_ptu_pan_angle = ptu_pan_angle + ptu_maxSpeed * axis_pan;
+            if(new_ptu_pan_angle < ptu_maxPanAngle && new_ptu_pan_angle > ptu_minPanAngle)
+            {
+                ptu_pan_angle = new_ptu_pan_angle;
+            }
+            else if(new_ptu_pan_angle > ptu_maxPanAngle)
+            {
+                ptu_pan_angle = ptu_maxPanAngle;
+            }
+            else if(new_ptu_pan_angle < ptu_minPanAngle)
+            {
+                ptu_pan_angle = ptu_minPanAngle;
+            }
+            
+            // Actually send the command the port is connected to somethings
+            if(_ptu_pan_angle.connected())
+            {
+                _ptu_pan_angle.write(ptu_pan_angle);
+            }
+        }
+        
+        if(axis_tilt != 0)
+        {
+            // Make sure the PTU maximum and minimum tilt values are not exceeded
+            double new_ptu_tilt_angle = ptu_tilt_angle + ptu_maxSpeed * axis_tilt;
+            if(new_ptu_tilt_angle < ptu_maxTiltAngle && new_ptu_tilt_angle > ptu_minTiltAngle)
+            {
+                ptu_tilt_angle = new_ptu_tilt_angle;
+            }
+            else if(new_ptu_tilt_angle > ptu_maxTiltAngle)
+            {
+                ptu_tilt_angle = ptu_maxTiltAngle;
+            }
+            else if(new_ptu_tilt_angle < ptu_minTiltAngle)
+            {
+                ptu_tilt_angle = ptu_minTiltAngle;
+            }
+            
+            // Actually send the command if the port is connected to something
+            if(_ptu_tilt_angle.connected())
+            {
+                _ptu_tilt_angle.write(ptu_tilt_angle);
+            }
+        }
+        
         // Process data only when it has actually changed (latching is not required)
         if(joystick_command.axisValue != axis || joystick_command.buttonValue != buttons)
         {
-            // This makes the package not work, do not remap this way!        
-            // Remap the axis, the joystick has a strange axis mapping...
-            /*axis[LEFT][HORIZONTAL] = joystick_command.axisValue[0][0];
-            axis[LEFT][VERTICAL] = joystick_command.axisValue[0][1];
-            axis[RIGHT][HORIZONTAL] = joystick_command.axisValue[0][2];
-            axis[RIGHT][VERTICAL] = joystick_command.axisValue[1][0];*/
-            
-            // Save values
-            axis = joystick_command.axisValue;
             buttons = joystick_command.buttonValue;
-            
-            // Remap values
-            axis_translation = axis[0][0];
-            axis_rotation = -axis[0][1];
+            axis_translation = joystick_command.axisValue[0][0];
+            axis_rotation = -joystick_command.axisValue[0][1];
             
             // Increase or decrease the speedRatio
-            if(buttons[Y] && speedRatio < 1.0)
+            if(buttons[LB] && speedRatio < 1.0)
             {
                 speedRatio += speedRatioStep;
             }
-            else if(buttons[A] && speedRatio > 0.0)
+            else if(buttons[LT] && speedRatio > speedRatioStep)
             {
+                // Never goes lower than one step increment
                 speedRatio -= speedRatioStep;
             }
             
-            // Toggle point turn mode
+            // Toggle point turn mode with X
             if(buttons[X])
             {
                 // Toggle the mode
                 pointTurn = !pointTurn;
                 
-                // TODO switching does not work properly
                 if(pointTurn)
                 {
-                    // Force the switching by sending a tiny rotational command
+                    // Force the locomotion mode switching by sending a tiny
+                    // rotational command with 0 translational speed
+                    // The speed does not actually get set because locomotion
+                    // control sets the speeds to 0 when switching modes
                     motion_command.translation = 0.0;
                     motion_command.rotation = minSpeedPointTurn;
+                    
+                    // Send the command immediately
                     _motion_command.write(motion_command);
-                    motion_command.translation = 0.0;
-                    motion_command.rotation = 0.0;
-                    _motion_command.write(motion_command);
+                    
+                    // Return as to not send any other speed commands
+                    return;
                 }
                 else
                 {
-                    // Force the switching by sending a tiny translational command
+                    // Force the locomotion mode switching by sending a tiny
+                    // translational command with 0 rotational speed
                     motion_command.translation = minSpeedPointTurn;
                     motion_command.rotation = 0.0;
                     _motion_command.write(motion_command);
-                    motion_command.translation = 0.0;
-                    motion_command.rotation = 0.0;
-                    _motion_command.write(motion_command);
+                    return;
                 }
             }
             
             if(pointTurn)
             {
-                // In point turn mode the translational speed is always 0
+                // In point turn mode the translational speed is always 0,
+                // otherwise it will trigger mode switching
                 motion_command.translation = 0.0;
                 motion_command.rotation = axis_rotation * speedRatio;
             }
             else
             {
                 // In Ackermann mode the translational speed is never 0
-                // TODO fix this, the direction behaves strangely when going in the 3rd and 4th quadrants from 1st and 2nd
                 if(axis_translation != 0.0)
                 {
                     motion_command.translation = axis_translation * speedRatio;
                     motion_command.rotation = axis_rotation * speedRatio;
+                    // Rotational speed must be reversed when translational speed is negative, or all the wheels will steer the other way
+                    if(motion_command.translation < 0)
+                    {
+                        motion_command.rotation *= -1;
+                    }
                 }
                 else if(axis_rotation != 0.0)
                 {
-                    // Add a small theshold when rotation is requested, but translation is 0
+                    // Prevent translation speed reaching 0 or it will trigger mode switching
                     motion_command.translation = minSpeedPointTurn;
                     motion_command.rotation = axis_rotation * speedRatio;
                 }
                 else
                 {
-                    // Stop when axis are both 0
+                    // Stop when both axis are 0
                     motion_command.translation = 0.0;
                     motion_command.rotation = 0.0;
                 }
             }
             
-            // Point turn left
-            /*if(buttons[X])
-            {
-                // Rover switches to point turn when translational speed is 0
-                motion_command.translation = 0.0;
-                // Speed in point turn mode is only dependent on the speed ratio
-                motion_command.rotation = speedRatio;
-            }
-            else if(buttons[B])
-            {
-                motion_command.translation = 0.0;
-                motion_command.rotation = -speedRatio;
-            }
-            else if(axis_rotation != 0.0)
-            {
-                // As long as X or B are not pushed the rover does Ackermann steering
-                motion_command.translation = axis_translation * speedRatio;
-                
-                if(motion_command.translation == 0.0)
-                {
-                    // The rover switches to Ackermann when translation speed is 0,
-                    // prevent that from happening
-                    motion_command.translation = minSpeedPointTurn;
-                }
-                motion_command.rotation = axis_rotation * speedRatio;
-            }*/
-            
             _motion_command.write(motion_command);
-            
-            // TODO PTU control with the right joystick
-            
-            // TODO use the front, back and start buttons to do something
-            
-            // TODO use the start button to emit a beep for example (connection test)
         }
     }
 }
@@ -194,8 +234,15 @@ void Task::errorHook()
 
 void Task::stopHook()
 {
-    // TODO reset parameters?
     TaskBase::stopHook();
+    
+    // Inform user about error
+    std::cout << "motion_translator::stopHook: Stopping the platform." << std::endl;
+    
+    // When the stop hook is called stop the rover
+    motion_command.translation = 0.0;
+    motion_command.rotation = 0.0;
+    _motion_command.write(motion_command);
 }
 
 void Task::cleanupHook()

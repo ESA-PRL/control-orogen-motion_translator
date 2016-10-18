@@ -7,21 +7,38 @@ import_types_from "base"
 task_context "Task" do
     needs_configuration
     
-    property("minSpeedPointTurn", "double", 0.001)
-	doc("Minimum translation speed in m/s before switching to point turn mode")
-    property("speedRatioStep", "double", 0.005)
-	doc("Ratio step value")
+    property("minSpeedPointTurn", "double", 0.001).
+    	doc("Minimum translation speed preventing automatic mode switch")
+    property("speedRatioStep", "double", 0.005).
+    	doc("Ratio step value")
+    property("ptuMaxSpeed", "double", 0.2).
+	    doc("Maximum speed at which to move the PTU axis")
+	
+    property("ptuMaxPanAngle", "double", 2.75010971105).
+    	doc("Maximum PTU pan angle in degrees")
+    property("ptuMinPanAngle", "double", -2.757507351).
+	    doc("Minimum PTU pan angle in degrees")
+    property("ptuMaxTiltAngle", "double", 0.7879634254).
+    	doc("Maximum PTU tilt angle in degrees")
+    property("ptuMinTiltAngle", "double", -0.52688923589).
+    	doc("Minimum PTU tilt angle in degrees")
 
     # Output ports
-    input_port "raw_command", "/controldev/RawCommand"
+    input_port("raw_command", "/controldev/RawCommand").
+        doc("Input from joystick")
     
     # Output ports
-    output_port "motion_command", "base/MotionCommand2D"
+    output_port("motion_command", "base/MotionCommand2D").
+        doc("Output commands to the wheels and steering")
+    output_port("ptu_pan_angle", "double").
+        doc("PTU angle command")
+    output_port("ptu_tilt_angle", "double").
+        doc("PTU tilt command")
 
     # updateHook() executed when the "raw_command" port gets data
     # Get the value with _raw_command.read()
-    port_driven "raw_command"
+    port_driven("raw_command")
     
-    #periodic 0.1
+    periodic 0.1
 end
 
