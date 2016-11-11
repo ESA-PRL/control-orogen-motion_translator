@@ -15,13 +15,13 @@ task_context "Task" do
 	    doc("Maximum speed at which to move the PTU axis")
 	
     property("ptuMaxPanAngle", "double", 2.75010971105).
-    	doc("Maximum PTU pan angle in degrees")
+    	doc("Maximum PTU pan angle, in PTU units")
     property("ptuMinPanAngle", "double", -2.757507351).
-	    doc("Minimum PTU pan angle in degrees")
+	    doc("Minimum PTU pan angle, in PTU units")
     property("ptuMaxTiltAngle", "double", 0.7879634254).
-    	doc("Maximum PTU tilt angle in degrees")
+    	doc("Maximum PTU tilt angle, in PTU units")
     property("ptuMinTiltAngle", "double", -0.52688923589).
-    	doc("Minimum PTU tilt angle in degrees")
+    	doc("Minimum PTU tilt angle, in PTU units")
 
     # Input ports
     input_port("raw_command", "/controldev/RawCommand").
