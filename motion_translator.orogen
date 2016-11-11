@@ -23,7 +23,7 @@ task_context "Task" do
     property("ptuMinTiltAngle", "double", -0.52688923589).
     	doc("Minimum PTU tilt angle in degrees")
 
-    # Output ports
+    # Input ports
     input_port("raw_command", "/controldev/RawCommand").
         doc("Input from joystick")
     
