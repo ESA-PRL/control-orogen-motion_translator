@@ -37,8 +37,6 @@ task_context "Task" do
 
     # updateHook() executed when the "raw_command" port gets data
     # Get the value with _raw_command.read()
-    port_driven("raw_command")
-    
-    periodic 0.1
+    port_driven
 end
 
