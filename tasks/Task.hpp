@@ -40,13 +40,13 @@ namespace motion_translator
         // PTU variables
         double ptu_pan_angle;
         double ptu_tilt_angle;
-        const double ptu_maxSpeed;
+        double ptu_maxSpeed;
         
-        // PTU movement limits (but cannot be consts as they are defined later)
-        const double ptu_maxPanAngle;
-        const double ptu_minPanAngle;
-        const double ptu_maxTiltAngle;
-        const double ptu_minTiltAngle;
+        // PTU movement limits
+        double ptu_maxPanAngle;
+        double ptu_minPanAngle;
+        double ptu_maxTiltAngle;
+        double ptu_minTiltAngle;
         
         // Joystick axis values
         double axis_translation;
@@ -57,8 +57,8 @@ namespace motion_translator
         // Locomotion related parameters
         bool pointTurn;
         double speedRatio;
-        const double speedRatioStep;
-        const double minSpeedPointTurn;
+        double speedRatioStep;
+        double minSpeedPointTurn;
     public:
         Task(std::string const& name = "motion_translator::Task");
         Task(std::string const& name, RTT::ExecutionEngine* engine);

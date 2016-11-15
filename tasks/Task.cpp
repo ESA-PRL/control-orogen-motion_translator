@@ -4,26 +4,12 @@
 using namespace motion_translator;
 
 Task::Task(std::string const& name):
-    TaskBase(name),
-    ptu_maxPanAngle(_ptuMaxPanAngle.get()),
-    ptu_minPanAngle(_ptuMinPanAngle.get()),
-    ptu_maxTiltAngle(_ptuMaxTiltAngle.get()),
-    ptu_minTiltAngle(_ptuMinTiltAngle.get()),
-    ptu_maxSpeed(_ptuMaxSpeed.get()),
-    minSpeedPointTurn(_minSpeedPointTurn.get()),
-    speedRatioStep(_speedRatioStep.get())
+    TaskBase(name)
 {
 }
 
 Task::Task(std::string const& name, RTT::ExecutionEngine* engine):
-    TaskBase(name, engine),
-    ptu_maxPanAngle(_ptuMaxPanAngle.get()),
-    ptu_minPanAngle(_ptuMinPanAngle.get()),
-    ptu_maxTiltAngle(_ptuMaxTiltAngle.get()),
-    ptu_minTiltAngle(_ptuMinTiltAngle.get()),
-    ptu_maxSpeed(_ptuMaxSpeed.get()),
-    minSpeedPointTurn(_minSpeedPointTurn.get()),
-    speedRatioStep(_speedRatioStep.get())
+    TaskBase(name, engine)
 {
 }
 
@@ -37,6 +23,14 @@ bool Task::configureHook()
     {
         return false;
     }
+    
+    ptu_maxPanAngle = _ptuMaxPanAngle.get();
+    ptu_minPanAngle = _ptuMinPanAngle.get();
+    ptu_maxTiltAngle = _ptuMaxTiltAngle.get();
+    ptu_minTiltAngle = _ptuMinTiltAngle.get();
+    ptu_maxSpeed = _ptuMaxSpeed.get();
+    minSpeedPointTurn = _minSpeedPointTurn.get();
+    speedRatioStep = _speedRatioStep.get();
     
     // Initialize the motion_command message parameters
     motion_command.translation = 0.0;
