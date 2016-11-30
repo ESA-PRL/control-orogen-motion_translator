@@ -6,7 +6,7 @@ Package transforming the joystick raw commands to motion commands for wheels, st
 
 **Authors: Karl Kangur  
 Contact: Martin Azkarate  
-Affiliation: Automatipon and Robotics Laboratories, ESTEC, ESA**
+Affiliation: Automation and Robotics Laboratories, ESTEC, ESA**
 
 
 ## Installation
