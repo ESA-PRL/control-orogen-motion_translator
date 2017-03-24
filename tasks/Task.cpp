@@ -65,9 +65,17 @@ void Task::updateHook()
 {
     TaskBase::updateHook();
     
+    joystick_command_prev = joystick_command;
     // Process data from the joystick, sent regularly even when there are no changes
     if(_raw_command.read(joystick_command) == RTT::NewData)
     {            
+
+        // Prevent exception if there is no single entry in previous joystick_command
+        if (joystick_command_prev.axes.empty())
+        {
+            joystick_command_prev = joystick_command;
+        }
+
         // TODO stop in case the communication with the joystick is lost (timeout), this process is called periodically, one can use a counter as the timeout
         // TODO ignore first command from the joystick as it might not be sending any data (not sure if actually an issue), for some reason the wheels turn at the beginning
         // When the joystick is not yet functional (a button has net been pressed) the receieved values are not set to 0 by default. Instead they are set to 1, -1, -1, -1 for the joystick axes.
@@ -132,8 +140,7 @@ void Task::updateHook()
             (joystick_command_prev.buttons["BTN_X"] != joystick_command.buttons["BTN_X"])
         )
         {
-            joystick_command_prev = joystick_command;
-            axis_translation = -joystick_command.axes["ABS_Y"];
+            axis_translation = joystick_command.axes["ABS_Y"];
             axis_rotation = -joystick_command.axes["ABS_X"];
             
             // Increase or decrease the speedRatio
