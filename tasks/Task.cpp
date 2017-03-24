@@ -73,9 +73,8 @@ void Task::updateHook()
         // When the joystick is not yet functional (a button has net been pressed) the receieved values are not set to 0 by default. Instead they are set to 1, -1, -1, -1 for the joystick axes.
         
         // The PTU is controlled in incremental mode, this must be called every time, regardless if changed or not
-        axis_pan = joystick_command.axisValue[0][2];
-        axis_tilt = -joystick_command.axisValue[1][0];
-        
+        axis_pan = joystick_command.axisValue[2];
+        axis_tilt = -joystick_command.axisValue[3];
         if(axis_pan != 0)
         {
             // Make sure the PTU maximum and minimum pan values are not exceeded
@@ -128,8 +127,8 @@ void Task::updateHook()
         if(joystick_command.axisValue != axis || joystick_command.buttonValue != buttons)
         {
             buttons = joystick_command.buttonValue;
-            axis_translation = joystick_command.axisValue[0][0];
-            axis_rotation = -joystick_command.axisValue[0][1];
+            axis_translation = -joystick_command.axisValue[1];
+            axis_rotation = -joystick_command.axisValue[0];
             
             // Increase or decrease the speedRatio
             if(buttons[LB] && speedRatio < 1.0)
