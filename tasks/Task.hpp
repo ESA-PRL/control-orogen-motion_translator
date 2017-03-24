@@ -31,8 +31,9 @@ namespace motion_translator
         controldev::RawCommand joystick_command;
         
         // Local copy of incoming axis and button data from the joystick
-        std::vector<double> axis;
-        std::vector<uint8_t> buttons;
+        controldev::RawCommand joystick_command_prev;
+        //std::vector<double> axis;
+        //std::vector<uint8_t> buttons;
         
         // Motion command sent to motors, contains translation and rotation speeds
         base::MotionCommand2D motion_command;

@@ -73,8 +73,8 @@ void Task::updateHook()
         // When the joystick is not yet functional (a button has net been pressed) the receieved values are not set to 0 by default. Instead they are set to 1, -1, -1, -1 for the joystick axes.
         
         // The PTU is controlled in incremental mode, this must be called every time, regardless if changed or not
-        axis_pan = joystick_command.axisValue[2];
-        axis_tilt = -joystick_command.axisValue[3];
+        axis_pan = joystick_command.axes["ABS_Z"];
+        axis_tilt = -joystick_command.axes["ABS_RZ"];
         if(axis_pan != 0)
         {
             // Make sure the PTU maximum and minimum pan values are not exceeded
@@ -124,25 +124,31 @@ void Task::updateHook()
         }
         
         // Process data only when it has actually changed (latching is not required)
-        if(joystick_command.axisValue != axis || joystick_command.buttonValue != buttons)
+        if(
+            (joystick_command_prev.axes["ABS_Y"] != joystick_command.axes["ABS_Y"]) ||
+            (joystick_command_prev.axes["ABS_X"] != joystick_command.axes["ABS_X"]) ||
+            (joystick_command_prev.buttons["BTN_Y"] != joystick_command.buttons["BTN_Y"]) ||
+            (joystick_command_prev.buttons["BTN_TL"] != joystick_command.buttons["BTN_TL"]) ||
+            (joystick_command_prev.buttons["BTN_X"] != joystick_command.buttons["BTN_X"])
+        )
         {
-            buttons = joystick_command.buttonValue;
-            axis_translation = -joystick_command.axisValue[1];
-            axis_rotation = -joystick_command.axisValue[0];
+            joystick_command_prev = joystick_command;
+            axis_translation = -joystick_command.axes["ABS_Y"];
+            axis_rotation = -joystick_command.axes["ABS_X"];
             
             // Increase or decrease the speedRatio
-            if(buttons[LB] && speedRatio < 1.0)
+            if(joystick_command.buttons["BTN_Y"] && speedRatio < 1.0)
             {
                 speedRatio += speedRatioStep;
             }
-            else if(buttons[LT] && speedRatio > speedRatioStep)
+            else if(joystick_command.buttons["BTN_TL"] && speedRatio > speedRatioStep)
             {
                 // Never goes lower than one step increment
                 speedRatio -= speedRatioStep;
             }
             
             // Toggle point turn mode with X
-            if(buttons[X])
+            if(joystick_command.buttons["BTN_X"])
             {
                 // Toggle the mode
                 pointTurn = !pointTurn;
