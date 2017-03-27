@@ -42,6 +42,7 @@ namespace motion_translator
         double ptu_pan_angle;
         double ptu_tilt_angle;
         double ptu_maxSpeed;
+        base::commands::Joints ptu_command;
         
         // PTU movement limits
         double ptu_maxPanAngle;

@@ -1,5 +1,6 @@
 #include "Task.hpp"
 #include <math.h>
+#include <base/commands/Joints.hpp>
 
 using namespace motion_translator;
 
@@ -43,6 +44,9 @@ bool Task::configureHook()
     
     ptu_pan_angle = 0.0;
     ptu_tilt_angle = 0.0;
+    ptu_command.resize(2);
+    ptu_command.names[0] = "MAST_PAN";
+    ptu_command.names[1] = "MAST_TILT";
     
     pointTurn = false;
     
@@ -58,6 +62,11 @@ bool Task::startHook()
     {
         return false;
     }
+    ptu_command["MAST_PAN"].position=base::NaN<float>();
+    ptu_command["MAST_TILT"].position=base::NaN<float>();
+    ptu_command["MAST_PAN"].speed=0.0;
+    ptu_command["MAST_TILT"].speed=0.0;
+ 
     return true;
 }
 
@@ -83,53 +92,10 @@ void Task::updateHook()
         // The PTU is controlled in incremental mode, this must be called every time, regardless if changed or not
         axis_pan = joystick_command.axes["ABS_Z"];
         axis_tilt = -joystick_command.axes["ABS_RZ"];
-        if(axis_pan != 0)
-        {
-            // Make sure the PTU maximum and minimum pan values are not exceeded
-            double new_ptu_pan_angle = ptu_pan_angle + ptu_maxSpeed * axis_pan;
-            if(new_ptu_pan_angle < ptu_maxPanAngle && new_ptu_pan_angle > ptu_minPanAngle)
-            {
-                ptu_pan_angle = new_ptu_pan_angle;
-            }
-            else if(new_ptu_pan_angle > ptu_maxPanAngle)
-            {
-                ptu_pan_angle = ptu_maxPanAngle;
-            }
-            else if(new_ptu_pan_angle < ptu_minPanAngle)
-            {
-                ptu_pan_angle = ptu_minPanAngle;
-            }
-            
-            // Actually send the command the port is connected to somethings
-            if(_ptu_pan_angle.connected())
-            {
-                _ptu_pan_angle.write(ptu_pan_angle);
-            }
-        }
-        
-        if(axis_tilt != 0)
-        {
-            // Make sure the PTU maximum and minimum tilt values are not exceeded
-            double new_ptu_tilt_angle = ptu_tilt_angle + ptu_maxSpeed * axis_tilt;
-            if(new_ptu_tilt_angle < ptu_maxTiltAngle && new_ptu_tilt_angle > ptu_minTiltAngle)
-            {
-                ptu_tilt_angle = new_ptu_tilt_angle;
-            }
-            else if(new_ptu_tilt_angle > ptu_maxTiltAngle)
-            {
-                ptu_tilt_angle = ptu_maxTiltAngle;
-            }
-            else if(new_ptu_tilt_angle < ptu_minTiltAngle)
-            {
-                ptu_tilt_angle = ptu_minTiltAngle;
-            }
-            
-            // Actually send the command if the port is connected to something
-            if(_ptu_tilt_angle.connected())
-            {
-                _ptu_tilt_angle.write(ptu_tilt_angle);
-            }
-        }
+
+        ptu_command["MAST_PAN"].speed= axis_pan*ptu_maxSpeed;
+        ptu_command["MAST_TILT"].speed= axis_tilt*ptu_maxSpeed;
+        _ptu_command.write(ptu_command);
         
         // Process data only when it has actually changed (latching is not required)
         if(
