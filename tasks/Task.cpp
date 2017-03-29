@@ -103,7 +103,7 @@ void Task::updateHook()
             (joystick_command_prev.axes["ABS_X"] != joystick_command.axes["ABS_X"]) ||
             (joystick_command_prev.buttons["BTN_Y"] != joystick_command.buttons["BTN_Y"]) ||
             (joystick_command_prev.buttons["BTN_TL"] != joystick_command.buttons["BTN_TL"]) ||
-            (joystick_command_prev.buttons["BTN_X"] != joystick_command.buttons["BTN_X"])
+            (joystick_command_prev.buttons["BTN_A"] != joystick_command.buttons["BTN_A"])
         )
         {
             axis_translation = joystick_command.axes["ABS_Y"];
@@ -121,7 +121,8 @@ void Task::updateHook()
             }
             
             // Toggle point turn mode with X
-            if(joystick_command.buttons["BTN_X"])
+            // Unfortunately the gamepad is recognized as a Logitech Rumblepad2, therefore button X is mapped to button A
+            if(joystick_command.buttons["BTN_A"])
             {
                 // Toggle the mode
                 pointTurn = !pointTurn;
