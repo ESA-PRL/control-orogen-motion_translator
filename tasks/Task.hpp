@@ -3,6 +3,7 @@
 
 #include "motion_translator/TaskBase.hpp"
 #include "controldev/JoystickTaskBase.hpp"
+#include <base/commands/Joints.hpp>
 
 namespace motion_translator
 {
@@ -36,7 +37,7 @@ namespace motion_translator
         //std::vector<uint8_t> buttons;
         
         // Motion command sent to motors, contains translation and rotation speeds
-        base::MotionCommand2D motion_command;
+        base::commands::Motion2D motion_command;
         
         // PTU variables
         double ptu_pan_angle;
