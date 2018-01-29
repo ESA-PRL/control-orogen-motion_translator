@@ -28,12 +28,11 @@ task_context "Task" do
         doc("Input from joystick")
     
     # Output ports
-    output_port("motion_command", "base/MotionCommand2D").
+    output_port("motion_command", "base/commands/Motion2D").
         doc("Output commands to the wheels and steering")
-    output_port("ptu_pan_angle", "double").
-        doc("PTU angle command")
-    output_port("ptu_tilt_angle", "double").
-        doc("PTU tilt command")
+
+    output_port("ptu_command", "/base/commands/Joints").
+        doc("PAN and TILT command vector")
 
     # updateHook() executed when the "raw_command" port gets data
     # Get the value with _raw_command.read()

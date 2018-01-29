@@ -3,6 +3,7 @@
 
 #include "motion_translator/TaskBase.hpp"
 #include "controldev/JoystickTaskBase.hpp"
+#include <base/commands/Joints.hpp>
 
 namespace motion_translator
 {
@@ -31,16 +32,18 @@ namespace motion_translator
         controldev::RawCommand joystick_command;
         
         // Local copy of incoming axis and button data from the joystick
-        std::vector<std::vector<double> > axis;
-        std::vector<uint8_t> buttons;
+        controldev::RawCommand joystick_command_prev;
+        //std::vector<double> axis;
+        //std::vector<uint8_t> buttons;
         
         // Motion command sent to motors, contains translation and rotation speeds
-        base::MotionCommand2D motion_command;
+        base::commands::Motion2D motion_command;
         
         // PTU variables
         double ptu_pan_angle;
         double ptu_tilt_angle;
         double ptu_maxSpeed;
+        base::commands::Joints ptu_command;
         
         // PTU movement limits
         double ptu_maxPanAngle;

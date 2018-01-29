@@ -1,5 +1,6 @@
 #include "Task.hpp"
 #include <math.h>
+#include <base/commands/Joints.hpp>
 
 using namespace motion_translator;
 
@@ -43,7 +44,10 @@ bool Task::configureHook()
 
     ptu_pan_angle = 0.0;
     ptu_tilt_angle = 0.0;
-
+    ptu_command.resize(2);
+    ptu_command.names[0] = "MAST_PAN";
+    ptu_command.names[1] = "MAST_TILT";
+    
     pointTurn = false;
 
     // Minimum speed is the smallest step increment
@@ -58,93 +62,70 @@ bool Task::startHook()
     {
         return false;
     }
+    ptu_command["MAST_PAN"].position=base::NaN<float>();
+    ptu_command["MAST_TILT"].position=base::NaN<float>();
+    ptu_command["MAST_PAN"].speed=0.0;
+    ptu_command["MAST_TILT"].speed=0.0;
+ 
     return true;
 }
 
 void Task::updateHook()
 {
     TaskBase::updateHook();
-
+    
+    joystick_command_prev = joystick_command;
     // Process data from the joystick, sent regularly even when there are no changes
     if(_raw_command.read(joystick_command) == RTT::NewData)
-    {
+    {            
+
+        // Prevent exception if there is no single entry in previous joystick_command
+        if (joystick_command_prev.axes.empty())
+        {
+            joystick_command_prev = joystick_command;
+        }
+
         // TODO stop in case the communication with the joystick is lost (timeout), this process is called periodically, one can use a counter as the timeout
         // TODO ignore first command from the joystick as it might not be sending any data (not sure if actually an issue), for some reason the wheels turn at the beginning
         // When the joystick is not yet functional (a button has net been pressed) the receieved values are not set to 0 by default. Instead they are set to 1, -1, -1, -1 for the joystick axes.
 
         // The PTU is controlled in incremental mode, this must be called every time, regardless if changed or not
-        axis_pan = joystick_command.axisValue[0][2];
-        axis_tilt = -joystick_command.axisValue[1][0];
 
-        if(axis_pan != 0)
-        {
-            // Make sure the PTU maximum and minimum pan values are not exceeded
-            double new_ptu_pan_angle = ptu_pan_angle + ptu_maxSpeed * axis_pan;
-            if(new_ptu_pan_angle < ptu_maxPanAngle && new_ptu_pan_angle > ptu_minPanAngle)
-            {
-                ptu_pan_angle = new_ptu_pan_angle;
-            }
-            else if(new_ptu_pan_angle > ptu_maxPanAngle)
-            {
-                ptu_pan_angle = ptu_maxPanAngle;
-            }
-            else if(new_ptu_pan_angle < ptu_minPanAngle)
-            {
-                ptu_pan_angle = ptu_minPanAngle;
-            }
+        axis_pan = joystick_command.axes["ABS_Z"];
+        axis_tilt = -joystick_command.axes["ABS_RZ"];
 
-            // Actually send the command the port is connected to somethings
-            if(_ptu_pan_angle.connected())
-            {
-                _ptu_pan_angle.write(ptu_pan_angle);
-            }
-        }
-
-        if(axis_tilt != 0)
-        {
-            // Make sure the PTU maximum and minimum tilt values are not exceeded
-            double new_ptu_tilt_angle = ptu_tilt_angle + ptu_maxSpeed * axis_tilt;
-            if(new_ptu_tilt_angle < ptu_maxTiltAngle && new_ptu_tilt_angle > ptu_minTiltAngle)
-            {
-                ptu_tilt_angle = new_ptu_tilt_angle;
-            }
-            else if(new_ptu_tilt_angle > ptu_maxTiltAngle)
-            {
-                ptu_tilt_angle = ptu_maxTiltAngle;
-            }
-            else if(new_ptu_tilt_angle < ptu_minTiltAngle)
-            {
-                ptu_tilt_angle = ptu_minTiltAngle;
-            }
-
-            // Actually send the command if the port is connected to something
-            if(_ptu_tilt_angle.connected())
-            {
-                _ptu_tilt_angle.write(ptu_tilt_angle);
-            }
-        }
+        ptu_command["MAST_PAN"].speed= axis_pan*ptu_maxSpeed;
+        ptu_command["MAST_TILT"].speed= axis_tilt*ptu_maxSpeed;
+        _ptu_command.write(ptu_command);
+        
 
         // Process data only when it has actually changed (latching is not required)
-        if(joystick_command.axisValue != axis || joystick_command.buttonValue != buttons)
+        if(
+            (joystick_command_prev.axes["ABS_Y"] != joystick_command.axes["ABS_Y"]) ||
+            (joystick_command_prev.axes["ABS_X"] != joystick_command.axes["ABS_X"]) ||
+            (joystick_command_prev.buttons["BTN_Y"] != joystick_command.buttons["BTN_Y"]) ||
+            (joystick_command_prev.buttons["BTN_TL"] != joystick_command.buttons["BTN_TL"]) ||
+            (joystick_command_prev.buttons["BTN_A"] != joystick_command.buttons["BTN_A"])
+        )
         {
-            axis = joystick_command.axisValue;
-            buttons = joystick_command.buttonValue;
-            axis_translation = joystick_command.axisValue[0][0];
-            axis_rotation = -joystick_command.axisValue[0][1];
 
+            axis_translation = joystick_command.axes["ABS_Y"];
+            axis_rotation = -joystick_command.axes["ABS_X"];
+            
             // Increase or decrease the speedRatio
-            if(buttons[LB] && speedRatio < 1.0)
+            if(joystick_command.buttons["BTN_Y"] && speedRatio < 1.0)
             {
                 speedRatio += speedRatioStep;
             }
-            else if(buttons[LT] && speedRatio > speedRatioStep)
+            else if(joystick_command.buttons["BTN_TL"] && speedRatio > speedRatioStep)
             {
                 // Never goes lower than one step increment
                 speedRatio -= speedRatioStep;
             }
 
             // Toggle point turn mode with X
-            if(buttons[X])
+            // Unfortunately the gamepad is recognized as a Logitech Rumblepad2, therefore button X is mapped to button A
+            if(joystick_command.buttons["BTN_A"])
             {
                 // Toggle the mode
                 pointTurn = !pointTurn;
