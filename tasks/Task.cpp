@@ -24,7 +24,7 @@ bool Task::configureHook()
     {
         return false;
     }
-    
+
     ptu_maxPanAngle = _ptuMaxPanAngle.get();
     ptu_minPanAngle = _ptuMinPanAngle.get();
     ptu_maxTiltAngle = _ptuMaxTiltAngle.get();
@@ -32,16 +32,16 @@ bool Task::configureHook()
     ptu_maxSpeed = _ptuMaxSpeed.get();
     minSpeedPointTurn = _minSpeedPointTurn.get();
     speedRatioStep = _speedRatioStep.get();
-    
+
     // Initialize the motion_command message parameters
     motion_command.translation = 0.0;
     motion_command.rotation = 0.0;
-    
+
     axis_translation = 0.0;
     axis_rotation = 0.0;
     axis_pan = 0.0;
     axis_tilt = 0.0;
-    
+
     ptu_pan_angle = 0.0;
     ptu_tilt_angle = 0.0;
     ptu_command.resize(2);
@@ -49,10 +49,10 @@ bool Task::configureHook()
     ptu_command.names[1] = "MAST_TILT";
     
     pointTurn = false;
-    
+
     // Minimum speed is the smallest step increment
     speedRatio = speedRatioStep;
-    
+
     return true;
 }
 
@@ -88,8 +88,9 @@ void Task::updateHook()
         // TODO stop in case the communication with the joystick is lost (timeout), this process is called periodically, one can use a counter as the timeout
         // TODO ignore first command from the joystick as it might not be sending any data (not sure if actually an issue), for some reason the wheels turn at the beginning
         // When the joystick is not yet functional (a button has net been pressed) the receieved values are not set to 0 by default. Instead they are set to 1, -1, -1, -1 for the joystick axes.
-        
+
         // The PTU is controlled in incremental mode, this must be called every time, regardless if changed or not
+
         axis_pan = joystick_command.axes["ABS_Z"];
         axis_tilt = -joystick_command.axes["ABS_RZ"];
 
@@ -97,6 +98,7 @@ void Task::updateHook()
         ptu_command["MAST_TILT"].speed= axis_tilt*ptu_maxSpeed;
         _ptu_command.write(ptu_command);
         
+
         // Process data only when it has actually changed (latching is not required)
         if(
             (joystick_command_prev.axes["ABS_Y"] != joystick_command.axes["ABS_Y"]) ||
@@ -106,6 +108,7 @@ void Task::updateHook()
             (joystick_command_prev.buttons["BTN_A"] != joystick_command.buttons["BTN_A"])
         )
         {
+
             axis_translation = joystick_command.axes["ABS_Y"];
             axis_rotation = -joystick_command.axes["ABS_X"];
             
@@ -119,14 +122,14 @@ void Task::updateHook()
                 // Never goes lower than one step increment
                 speedRatio -= speedRatioStep;
             }
-            
+
             // Toggle point turn mode with X
             // Unfortunately the gamepad is recognized as a Logitech Rumblepad2, therefore button X is mapped to button A
             if(joystick_command.buttons["BTN_A"])
             {
                 // Toggle the mode
                 pointTurn = !pointTurn;
-                
+
                 if(pointTurn)
                 {
                     // Force the locomotion mode switching by sending a tiny
@@ -135,10 +138,10 @@ void Task::updateHook()
                     // control sets the speeds to 0 when switching modes
                     motion_command.translation = 0.0;
                     motion_command.rotation = minSpeedPointTurn;
-                    
+
                     // Send the command immediately
                     _motion_command.write(motion_command);
-                    
+
                     // Return as to not send any other speed commands
                     return;
                 }
@@ -152,7 +155,7 @@ void Task::updateHook()
                     return;
                 }
             }
-            
+
             if(pointTurn)
             {
                 // In point turn mode the translational speed is always 0,
@@ -186,7 +189,7 @@ void Task::updateHook()
                     motion_command.rotation = 0.0;
                 }
             }
-            
+
             _motion_command.write(motion_command);
         }
     }
@@ -195,10 +198,10 @@ void Task::updateHook()
 void Task::errorHook()
 {
     TaskBase::errorHook();
-    
+
     // Inform user about error
     std::cout << "motion_translator::errorHook: Error encountered, stopping." << std::endl;
-    
+
     // When an error occurs in this package stop the rover
     motion_command.translation = 0.0;
     motion_command.rotation = 0.0;
@@ -208,10 +211,10 @@ void Task::errorHook()
 void Task::stopHook()
 {
     TaskBase::stopHook();
-    
+
     // Inform user about error
     std::cout << "motion_translator::stopHook: Stopping the platform." << std::endl;
-    
+
     // When the stop hook is called stop the rover
     motion_command.translation = 0.0;
     motion_command.rotation = 0.0;
@@ -222,4 +225,3 @@ void Task::cleanupHook()
 {
     TaskBase::cleanupHook();
 }
-
