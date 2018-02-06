@@ -97,6 +97,54 @@ void Task::updateHook()
         ptu_command["MAST_PAN"].speed= axis_pan*ptu_maxSpeed;
         ptu_command["MAST_TILT"].speed= axis_tilt*ptu_maxSpeed;
         _ptu_command.write(ptu_command);
+
+        if(axis_pan != 0)
+        {
+            // Make sure the PTU maximum and minimum pan values are not exceeded
+            double new_ptu_pan_angle = ptu_pan_angle + ptu_maxSpeed * axis_pan;
+            if(new_ptu_pan_angle < ptu_maxPanAngle && new_ptu_pan_angle > ptu_minPanAngle)
+            {
+                ptu_pan_angle = new_ptu_pan_angle;
+            }
+            else if(new_ptu_pan_angle > ptu_maxPanAngle)
+            {
+                ptu_pan_angle = ptu_maxPanAngle;
+            }
+            else if(new_ptu_pan_angle < ptu_minPanAngle)
+            {
+                ptu_pan_angle = ptu_minPanAngle;
+            }
+            
+            // Actually send the command the port is connected to somethings
+            if(_ptu_pan_angle.connected())
+            {
+                _ptu_pan_angle.write(ptu_pan_angle);
+            }
+        }
+        
+        if(axis_tilt != 0)
+        {
+            // Make sure the PTU maximum and minimum tilt values are not exceeded
+            double new_ptu_tilt_angle = ptu_tilt_angle + ptu_maxSpeed * axis_tilt;
+            if(new_ptu_tilt_angle < ptu_maxTiltAngle && new_ptu_tilt_angle > ptu_minTiltAngle)
+            {
+                ptu_tilt_angle = new_ptu_tilt_angle;
+            }
+            else if(new_ptu_tilt_angle > ptu_maxTiltAngle)
+            {
+                ptu_tilt_angle = ptu_maxTiltAngle;
+            }
+            else if(new_ptu_tilt_angle < ptu_minTiltAngle)
+            {
+                ptu_tilt_angle = ptu_minTiltAngle;
+            }
+            
+            // Actually send the command if the port is connected to something
+            if(_ptu_tilt_angle.connected())
+            {
+                _ptu_tilt_angle.write(ptu_tilt_angle);
+            }
+        }
         
 
         // Process data only when it has actually changed (latching is not required)

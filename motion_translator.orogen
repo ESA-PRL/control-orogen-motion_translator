@@ -31,8 +31,15 @@ task_context "Task" do
     output_port("motion_command", "base/commands/Motion2D").
         doc("Output commands to the wheels and steering")
 
+    # ptu_command used in exoter
     output_port("ptu_command", "/base/commands/Joints").
         doc("PAN and TILT command vector")
+    # ptu_angles used in hdpr
+    output_port("ptu_pan_angle", "double").
+        doc("PAN command")
+    output_port("ptu_tilt_angle", "double").
+        doc("TILT command")
+
 
     # updateHook() executed when the "raw_command" port gets data
     # Get the value with _raw_command.read()
