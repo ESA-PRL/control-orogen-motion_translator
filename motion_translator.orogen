@@ -2,11 +2,12 @@ name "motion_translator"
 
 import_types_from "motion_translatorTypes.hpp"
 import_types_from "controldev/ControlDevTypes.hpp"
+import_types_from "locomotion_switcher/locomotion_switcherTypes.hpp"
 import_types_from "base"
 
 task_context "Task" do
     needs_configuration
-    
+
     property("minSpeedPointTurn", "double", 0.001).
     	doc("Minimum translation speed preventing automatic mode switch")
     property("speedRatioStep", "double", 0.005).
@@ -26,7 +27,7 @@ task_context "Task" do
     # Input ports
     input_port("raw_command", "/controldev/RawCommand").
         doc("Input from joystick")
-    
+
     # Output ports
     output_port("motion_command", "base/commands/Motion2D").
         doc("Output commands to the wheels and steering")
@@ -40,6 +41,7 @@ task_context "Task" do
     output_port("ptu_tilt_angle", "double").
         doc("TILT command")
 
+    output_port("locomotion_mode", "locomotion_switcher/LocomotionMode").doc("Locomotion mode, to be forwarded to locomotion switcher and to override autonomous l.m. switching.")
 
     # updateHook() executed when the "raw_command" port gets data
     # Get the value with _raw_command.read()

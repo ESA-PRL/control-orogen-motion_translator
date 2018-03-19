@@ -3,6 +3,7 @@
 #include <base/commands/Joints.hpp>
 
 using namespace motion_translator;
+using namespace locomotion_switcher;
 
 Task::Task(std::string const& name):
     TaskBase(name)
@@ -49,6 +50,8 @@ bool Task::configureHook()
     ptu_command.names[1] = "MAST_TILT";
     
     pointTurn = false;
+
+    locomotion_mode = LocomotionMode::DRIVING;
 
     // Minimum speed is the smallest step increment
     speedRatio = speedRatioStep;
@@ -145,7 +148,24 @@ void Task::updateHook()
                 _ptu_tilt_angle.write(ptu_tilt_angle);
             }
         }
-        
+
+        // print which button has been pressed
+        //for (int i = 0; i < sizeof(joystick_command.buttons)/sizeof(joystick_command.buttons[0]); i++)
+        //{
+        //    if (joystick_command.buttons[i])
+        //        std::cout << "button " << i << std::endl;
+        //}
+
+        // Toggle locomotion mode
+        // Button Y (rising edge) detection:
+        if(joystick_command.buttons[3] && !joystick_command_prev.buttons[3])
+        {
+            if (locomotion_mode == LocomotionMode::DRIVING)
+                locomotion_mode = LocomotionMode::WHEEL_WALKING;
+            else if (locomotion_mode == LocomotionMode::WHEEL_WALKING)
+                locomotion_mode = LocomotionMode::DRIVING;
+            _locomotion_mode.write(locomotion_mode);
+        }
 
         // Process data only when it has actually changed (latching is not required)
         if(
