@@ -42,6 +42,7 @@ bool Task::configureHook()
     axis_rotation = 0.0;
     axis_pan = 0.0;
     axis_tilt = 0.0;
+    sent_zero = false;
 
     ptu_pan_angle = 0.0;
     ptu_tilt_angle = 0.0;
@@ -99,7 +100,21 @@ void Task::updateHook()
 
         ptu_command["MAST_PAN"].speed= axis_pan*ptu_maxSpeed;
         ptu_command["MAST_TILT"].speed= axis_tilt*ptu_maxSpeed;
-        _ptu_command.write(ptu_command);
+        // _ptu_command.write(ptu_command); // avoid sending zero commands continuously
+
+        if ((axis_pan == 0.0) && (axis_tilt == 0.0))
+        {
+            if (!sent_zero)
+            {
+                _ptu_command.write(ptu_command);
+                sent_zero = true;
+            }
+        }
+        else
+        {
+            _ptu_command.write(ptu_command);
+            sent_zero = false;
+        }
 
         if(axis_pan != 0)
         {

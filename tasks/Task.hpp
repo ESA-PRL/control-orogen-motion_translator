@@ -56,6 +56,7 @@ namespace motion_translator
         double axis_rotation;
         double axis_pan;
         double axis_tilt;
+        bool sent_zero;
         
         locomotion_switcher::LocomotionMode locomotion_mode;
 
