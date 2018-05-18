@@ -70,7 +70,7 @@ bool Task::startHook()
     ptu_command["MAST_TILT"].position=base::NaN<float>();
     ptu_command["MAST_PAN"].speed=0.0;
     ptu_command["MAST_TILT"].speed=0.0;
- 
+
     return true;
 }
 
@@ -272,7 +272,7 @@ void Task::updateHook()
                     motion_command.rotation = 0.0;
                 }
             }
-
+            _locomotion_mode.write(locomotion_mode);
             _motion_command.write(motion_command);
         }
     }
