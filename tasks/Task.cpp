@@ -295,9 +295,6 @@ void Task::stopHook()
 {
     TaskBase::stopHook();
 
-    // Inform user about error
-    std::cout << "motion_translator::stopHook: Stopping the platform." << std::endl;
-
     // When the stop hook is called stop the rover
     motion_command.translation = 0.0;
     motion_command.rotation = 0.0;
