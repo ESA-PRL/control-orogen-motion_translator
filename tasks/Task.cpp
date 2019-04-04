@@ -37,9 +37,11 @@ bool Task::configureHook()
     // Initialize the motion_command message parameters
     motion_command.translation = 0.0;
     motion_command.rotation = 0.0;
+    motion_command.heading = base::Angle::fromRad(2);
 
     axis_translation = 0.0;
     axis_rotation = 0.0;
+    axis_heading = 0.0;
     axis_pan = 0.0;
     axis_tilt = 0.0;
     sent_zero = false;
@@ -51,6 +53,10 @@ bool Task::configureHook()
     ptu_command.names[1] = "MAST_TILT";
     
     pointTurn = false;
+    genericCrab = true;
+
+    crabForceValue = 42;
+    ackermannForceValue = -42;
 
     locomotion_mode = LocomotionMode::DRIVING;
 
@@ -95,11 +101,25 @@ void Task::updateHook()
 
         // The PTU is controlled in incremental mode, this must be called every time, regardless if changed or not
 
-        axis_pan = joystick_command.axes["ABS_Z"];
-        axis_tilt = -joystick_command.axes["ABS_RZ"];
 
-        ptu_command["MAST_PAN"].speed= axis_pan*ptu_maxSpeed;
-        ptu_command["MAST_TILT"].speed= axis_tilt*ptu_maxSpeed;
+        // Receive PTU commands from d-pad as both analog sticks are being used for the genericCrab.
+        if (genericCrab)
+        {
+            axis_pan = -joystick_command.axes["ABS_HAT0X"];
+            axis_tilt = -joystick_command.axes["ABS_HAT0Y"];
+
+            ptu_command["MAST_PAN"].speed= axis_pan*ptu_maxSpeed;
+            ptu_command["MAST_TILT"].speed= axis_tilt*ptu_maxSpeed;
+        }
+        else
+        {
+            axis_pan = joystick_command.axes["ABS_Z"];
+            axis_tilt = -joystick_command.axes["ABS_RZ"];
+
+            ptu_command["MAST_PAN"].speed= axis_pan*ptu_maxSpeed;
+            ptu_command["MAST_TILT"].speed= axis_tilt*ptu_maxSpeed;
+
+        }
         // _ptu_command.write(ptu_command); // avoid sending zero commands continuously
 
         if ((axis_pan == 0.0) && (axis_tilt == 0.0))
@@ -186,14 +206,31 @@ void Task::updateHook()
         if(
             (joystick_command_prev.axes["ABS_Y"] != joystick_command.axes["ABS_Y"]) ||
             (joystick_command_prev.axes["ABS_X"] != joystick_command.axes["ABS_X"]) ||
+            (joystick_command_prev.axes["ABS_Z"] != joystick_command.axes["ABS_Z"]) ||
             (joystick_command_prev.buttons["BTN_Y"] != joystick_command.buttons["BTN_Y"]) ||
             (joystick_command_prev.buttons["BTN_TL"] != joystick_command.buttons["BTN_TL"]) ||
-            (joystick_command_prev.buttons["BTN_A"] != joystick_command.buttons["BTN_A"])
+            (joystick_command_prev.buttons["BTN_A"] != joystick_command.buttons["BTN_A"]) ||
+            (joystick_command_prev.buttons["BTN_C"] != joystick_command.buttons["BTN_C"])
         )
         {
 
-            axis_translation = joystick_command.axes["ABS_Y"];
-            axis_rotation = -joystick_command.axes["ABS_X"];
+            if(genericCrab){
+                double velocity_x = joystick_command.axes["ABS_Y"];
+                double velocity_y = -joystick_command.axes["ABS_X"];
+
+                // Calculate velocity magnitude and heading and save them into the translation & heading variables for convenience.
+                // TODO: Uses dedicated variables for magnitude and direction of velocity.
+                // The the velocity magnitude should never exceed 1. The joystick outputs a higher value at some angles and thus has to be limited to 1.
+                axis_translation = std::min(sqrt(pow(velocity_x, 2) + pow(velocity_y, 2)), 1.0);
+                axis_heading = atan2(velocity_y, velocity_x);
+                // Rotation Rate around rover body
+                axis_rotation = joystick_command.axes["ABS_Z"];
+            }
+            else
+            {
+                axis_translation = joystick_command.axes["ABS_Y"];
+                axis_rotation = -joystick_command.axes["ABS_X"];
+            }
             
             // Increase or decrease the speedRatio
             if(joystick_command.buttons["BTN_Y"] && speedRatio < 1.0)
@@ -206,21 +243,24 @@ void Task::updateHook()
                 speedRatio -= speedRatioStep;
             }
 
-            // Toggle point turn mode with X
-            // Unfortunately the gamepad is recognized as a Logitech Rumblepad2, therefore button X is mapped to button A
-            if(joystick_command.buttons["BTN_A"])
+            // Toggle generic crabbing by pressing button B on Gamepad
+            // Unfortunately the gamepad is recognized as a Logitech Rumblepad2, therefore button X is mapped to button C
+            if(joystick_command.buttons["BTN_C"])
             {
-                // Toggle the mode
-                pointTurn = !pointTurn;
+                // Activate or deactivate genericCrab mode and disable pointTurn mode.
+                genericCrab = !genericCrab;
+                pointTurn = false;
 
-                if(pointTurn)
+                if(genericCrab)
                 {
                     // Force the locomotion mode switching by sending a tiny
-                    // rotational command with 0 translational speed
+                    // heading command.
                     // The speed does not actually get set because locomotion
                     // control sets the speeds to 0 when switching modes
-                    motion_command.translation = 0.0;
-                    motion_command.rotation = minSpeedPointTurn;
+
+                    motion_command.translation = crabForceValue;
+                    motion_command.rotation = crabForceValue;
+                    motion_command.heading = base::Angle::fromRad(0);
 
                     // Send the command immediately
                     _motion_command.write(motion_command);
@@ -232,8 +272,56 @@ void Task::updateHook()
                 {
                     // Force the locomotion mode switching by sending a tiny
                     // translational command with 0 rotational speed
-                    motion_command.translation = minSpeedPointTurn;
+
+                    // motion_command.translation = minSpeedPointTurn;
+                    motion_command.translation = ackermannForceValue;   // Force the switch into the old locomotion system by sending -42
                     motion_command.rotation = 0.0;
+                    motion_command.heading = base::Angle::fromRad(0);
+
+                    _motion_command.write(motion_command);
+                    return;
+                }
+
+
+            }
+
+            // Toggle point turn mode with X
+            // Unfortunately the gamepad is recognized as a Logitech Rumblepad2, therefore button X is mapped to button A
+            if(joystick_command.buttons["BTN_A"])
+            {
+                // Activate or deactivate pointTurn mode and disable genericCrab mode.
+                pointTurn = !pointTurn;
+                genericCrab = false;
+
+                if(pointTurn)
+                {
+                    // Force the locomotion mode switching by sending a tiny
+                    // rotational command with 0 translational speed
+                    // The speed does not actually get set because locomotion
+                    // control sets the speeds to 0 when switching modes
+
+                    motion_command.translation = 0.0;
+                    // motion_command.translation = ackermannForceValue;       // Force the switch into the old locomotion system by sending -42
+                    // motion_command.rotation = minSpeedPointTurn;
+                    motion_command.rotation = ackermannForceValue;
+                    motion_command.heading = base::Angle::fromRad(0);
+
+                    // Send the command immediately
+                    _motion_command.write(motion_command);
+
+                    // Return as to not send any other speed commands
+                    return;
+                }
+                else
+                {
+                    // Force the locomotion mode switching by sending a tiny
+                    // translational command with 0 rotational speed
+
+                    // motion_command.translation = minSpeedPointTurn;
+                    motion_command.translation = ackermannForceValue;   // Force the switch into the old locomotion control logic by sending -42
+                    motion_command.rotation = 0.0;
+                    motion_command.heading = base::Angle::fromRad(0);
+
                     _motion_command.write(motion_command);
                     return;
                 }
@@ -245,6 +333,12 @@ void Task::updateHook()
                 // otherwise it will trigger mode switching
                 motion_command.translation = 0.0;
                 motion_command.rotation = axis_rotation * speedRatio;
+            }
+            else if (genericCrab)
+            {
+                motion_command.translation = axis_translation * speedRatio;
+                motion_command.rotation = axis_rotation * speedRatio;
+                motion_command.heading = base::Angle::fromRad(axis_heading);
             }
             else
             {

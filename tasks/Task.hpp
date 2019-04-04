@@ -4,6 +4,7 @@
 #include "motion_translator/TaskBase.hpp"
 #include "controldev/JoystickTaskBase.hpp"
 #include <base/commands/Joints.hpp>
+#include "base/Angle.hpp"
 
 namespace motion_translator
 {
@@ -54,6 +55,7 @@ namespace motion_translator
         // Joystick axis values
         double axis_translation;
         double axis_rotation;
+        double axis_heading;
         double axis_pan;
         double axis_tilt;
         bool sent_zero;
@@ -62,9 +64,14 @@ namespace motion_translator
 
         // Locomotion related parameters
         bool pointTurn;
+        bool genericCrab;
         double speedRatio;
         double speedRatioStep;
         double minSpeedPointTurn;
+
+        // SUPER Hacky way to switch between genericCrabbing and the old implementation
+        double crabForceValue;
+        double ackermannForceValue;
     public:
         Task(std::string const& name = "motion_translator::Task");
         Task(std::string const& name, RTT::ExecutionEngine* engine);
