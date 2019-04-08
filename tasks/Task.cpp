@@ -223,8 +223,13 @@ void Task::updateHook()
                 // The the velocity magnitude should never exceed 1. The joystick outputs a higher value at some angles and thus has to be limited to 1.
                 axis_translation = std::min(sqrt(pow(velocity_x, 2) + pow(velocity_y, 2)), 1.0);
                 axis_heading = atan2(velocity_y, velocity_x);
-                // Rotation Rate around rover body
+                
+                // Angular velocity of rover body in world frame
                 axis_rotation = joystick_command.axes["ABS_Z"];
+                // Switch the angular velocity if the rover is steered backwards for intuitive steering.
+                if (velocity_x < 0) {
+                    axis_rotation = -axis_rotation;
+                }
             }
             else
             {
@@ -253,8 +258,7 @@ void Task::updateHook()
 
                 if(genericCrab)
                 {
-                    // Force the locomotion mode switching by sending a tiny
-                    // heading command.
+                    // Force the locomotion mode switching by sending 42 in translation and rotation
                     // The speed does not actually get set because locomotion
                     // control sets the speeds to 0 when switching modes
 
