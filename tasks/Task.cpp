@@ -51,6 +51,7 @@ bool Task::configureHook()
     ptu_command.names[1] = "MAST_TILT";
     
     pointTurn = false;
+    crab = false;
 
     locomotion_mode = LocomotionMode::DRIVING;
 
@@ -211,7 +212,21 @@ void Task::updateHook()
             if(joystick_command.buttons["BTN_A"])
             {
                 // Toggle the mode
-                pointTurn = !pointTurn;
+                if (pointTurn)
+                {
+                    pointTurn = false;
+                    crab = true;
+                }
+                else if (crab)
+                {
+                    pointTurn = false;
+                    crab = false;
+                }
+                else
+                {
+                    pointTurn = true;
+                    crab = false;
+                }
 
                 if(pointTurn)
                 {
@@ -221,6 +236,23 @@ void Task::updateHook()
                     // control sets the speeds to 0 when switching modes
                     motion_command.translation = 0.0;
                     motion_command.rotation = minSpeedPointTurn;
+                    motion_command.heading = base::Angle::fromRad(0);
+
+                    // Send the command immediately
+                    _motion_command.write(motion_command);
+
+                    // Return as to not send any other speed commands
+                    return;
+                }
+                else if (crab)
+                {
+                    // Force the locomotion mode switching by sending a tiny
+                    // heading command with tiny translational speed
+                    // The speed does not actually get set because locomotion
+                    // control sets the speeds to 0 when switching modes
+                    motion_command.translation = minSpeedPointTurn;
+                    motion_command.rotation = 0.0;
+                    motion_command.heading = base::Angle::fromRad(0.01);
 
                     // Send the command immediately
                     _motion_command.write(motion_command);
@@ -234,6 +266,8 @@ void Task::updateHook()
                     // translational command with 0 rotational speed
                     motion_command.translation = minSpeedPointTurn;
                     motion_command.rotation = 0.0;
+                    motion_command.heading = base::Angle::fromRad(0);
+
                     _motion_command.write(motion_command);
                     return;
                 }
@@ -244,7 +278,14 @@ void Task::updateHook()
                 // In point turn mode the translational speed is always 0,
                 // otherwise it will trigger mode switching
                 motion_command.translation = 0.0;
-                motion_command.rotation = axis_rotation * speedRatio;
+                motion_command.rotation = axis_rotation * speedRatio * 2;
+                motion_command.heading = base::Angle::fromRad(0);
+            }
+            else if (crab)
+            {
+                motion_command.translation = sqrt(axis_translation * axis_translation + axis_rotation * axis_rotation) * speedRatio;
+                motion_command.rotation = 0.0;
+                motion_command.heading = base::Angle::fromRad(atan2(axis_rotation, axis_translation)); 
             }
             else
             {
@@ -253,6 +294,8 @@ void Task::updateHook()
                 {
                     motion_command.translation = axis_translation * speedRatio;
                     motion_command.rotation = axis_rotation * speedRatio;
+                    motion_command.heading = base::Angle::fromRad(0);
+                        
                     // Rotational speed must be reversed when translational speed is negative, or all the wheels will steer the other way
                     if(motion_command.translation < 0)
                     {
@@ -264,12 +307,14 @@ void Task::updateHook()
                     // Prevent translation speed reaching 0 or it will trigger mode switching
                     motion_command.translation = minSpeedPointTurn;
                     motion_command.rotation = axis_rotation * speedRatio;
+                    motion_command.heading = base::Angle::fromRad(0);
                 }
                 else
                 {
                     // Stop when both axis are 0
                     motion_command.translation = 0.0;
                     motion_command.rotation = 0.0;
+                    motion_command.heading = base::Angle::fromRad(0);
                 }
             }
             _locomotion_mode.write(locomotion_mode);

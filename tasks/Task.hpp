@@ -62,6 +62,7 @@ namespace motion_translator
 
         // Locomotion related parameters
         bool pointTurn;
+        bool crab;
         double speedRatio;
         double speedRatioStep;
         double minSpeedPointTurn;

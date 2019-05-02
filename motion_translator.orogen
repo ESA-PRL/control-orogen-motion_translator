@@ -47,4 +47,3 @@ task_context "Task" do
     # Get the value with _raw_command.read()
     port_driven
 end
-
