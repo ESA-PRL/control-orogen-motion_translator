@@ -5,6 +5,7 @@
 #include "controldev/JoystickTaskBase.hpp"
 #include <base/commands/Joints.hpp>
 #include "base/Angle.hpp"
+#include <base-logging/Logging.hpp>
 
 namespace motion_translator
 {

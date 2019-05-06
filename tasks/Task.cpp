@@ -189,7 +189,7 @@ void Task::updateHook()
         //for (int i = 0; i < sizeof(joystick_command.buttons)/sizeof(joystick_command.buttons[0]); i++)
         //{
         //    if (joystick_command.buttons[i])
-        //        std::cout << "button " << i << std::endl;
+        //        LOG_DEBUG_S << "button " << i;
         //}
 
         // Toggle locomotion mode
@@ -424,7 +424,7 @@ void Task::errorHook()
     TaskBase::errorHook();
 
     // Inform user about error
-    std::cout << "motion_translator::errorHook: Error encountered, stopping." << std::endl;
+    LOG_ERROR_S << "Error encountered, stopping.";
 
     // When an error occurs in this package stop the rover
     motion_command.translation = 0.0;
