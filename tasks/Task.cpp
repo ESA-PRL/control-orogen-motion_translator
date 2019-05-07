@@ -33,6 +33,9 @@ bool Task::configureHook()
     ptu_maxSpeed = _ptuMaxSpeed.get();
     minSpeedPointTurn = _minSpeedPointTurn.get();
     speedRatioStep = _speedRatioStep.get();
+    // Set linear (speedRatio) and angular (angularSpeedRatio) max-Velocities according to config
+    speedRatio = _initialSpeedRatio.get();
+    angularSpeedRatio = _initialSpeedRatio.get();
 
     // Initialize the motion_command message parameters
     motion_command.translation = 0.0;
@@ -61,8 +64,8 @@ bool Task::configureHook()
 
     locomotion_mode = LocomotionMode::DRIVING;
 
-    // Minimum speed is the smallest step increment
-    speedRatio = speedRatioStep;
+    // Minimum speed read out from config file
+
 
     return true;
 }
@@ -211,6 +214,8 @@ void Task::updateHook()
             (joystick_command_prev.buttons["BTN_Y"] != joystick_command.buttons["BTN_Y"]) ||
             (joystick_command_prev.buttons["BTN_TL"] != joystick_command.buttons["BTN_TL"]) ||
             (joystick_command_prev.buttons["BTN_A"] != joystick_command.buttons["BTN_A"]) ||
+            (joystick_command_prev.buttons["BTN_Z"] != joystick_command.buttons["BTN_Z"]) ||
+            (joystick_command_prev.buttons["BTN_TR"] != joystick_command.buttons["BTN_TR"]) ||
             (joystick_command_prev.buttons["BTN_B"] != joystick_command.buttons["BTN_B"])
         )
         {
@@ -246,6 +251,16 @@ void Task::updateHook()
             {
                 // Never goes lower than one step increment
                 speedRatio -= speedRatioStep;
+            }
+            // Increase or decrease the angularSpeedRatio
+            if(joystick_command.buttons["BTN_Z"] && angularSpeedRatio < 1.0)
+            {
+                angularSpeedRatio += speedRatioStep;
+            }
+            else if(joystick_command.buttons["BTN_TR"] && angularSpeedRatio > speedRatioStep)
+            {
+                // Never goes lower than one step increment
+                angularSpeedRatio -= speedRatioStep;
             }
 
             // Toggle generic crabbing by pressing button B on Gamepad
@@ -380,7 +395,7 @@ void Task::updateHook()
             else if (genericCrab)
             {
                 motion_command.translation = axis_translation * speedRatio;
-                motion_command.rotation = axis_rotation * speedRatio;
+                motion_command.rotation = axis_rotation * angularSpeedRatio;
                 motion_command.heading = base::Angle::fromRad(axis_heading);
             }
             else

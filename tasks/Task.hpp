@@ -68,8 +68,9 @@ namespace motion_translator
         bool genericCrab;
         bool crab;
 
-        double speedRatio;
         double speedRatioStep;
+        double speedRatio;
+        double angularSpeedRatio;
         double minSpeedPointTurn;
 
         // SUPER Hacky way to switch between genericCrabbing and the old implementation

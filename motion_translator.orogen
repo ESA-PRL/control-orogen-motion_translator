@@ -12,9 +12,11 @@ task_context "Task" do
     	doc("Minimum translation speed preventing automatic mode switch")
     property("speedRatioStep", "double", 0.005).
     	doc("Ratio step value")
+    property("initialSpeedRatio", "double", 0.02).
+      doc("Initial Speed Ratio Value")
     property("ptuMaxSpeed", "double", 0.2).
 	    doc("Maximum speed at which to move the PTU axis")
-	
+
     property("ptuMaxPanAngle", "double", 2.75010971105).
     	doc("Maximum PTU pan angle, in PTU units")
     property("ptuMinPanAngle", "double", -2.757507351).
