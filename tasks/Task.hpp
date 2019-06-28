@@ -64,6 +64,7 @@ namespace motion_translator
         bool pointTurn;
         double speedRatio;
         double speedRatioStep;
+        double angularSpeedRatio;
         double minSpeedPointTurn;
     public:
         Task(std::string const& name = "motion_translator::Task");

@@ -32,7 +32,12 @@ bool Task::configureHook()
     ptu_minTiltAngle = _ptuMinTiltAngle.get();
     ptu_maxSpeed = _ptuMaxSpeed.get();
     minSpeedPointTurn = _minSpeedPointTurn.get();
+    // Set linear (speedRatio) and angular (angularSpeedRatio) max-Velocities according to config
     speedRatioStep = _speedRatioStep.get();
+
+    
+    speedRatio = _initialSpeedRatio.get();
+    angularSpeedRatio = _initialSpeedRatio.get();
 
     // Initialize the motion_command message parameters
     motion_command.translation = 0.0;
@@ -53,9 +58,6 @@ bool Task::configureHook()
     pointTurn = false;
 
     locomotion_mode = LocomotionMode::DRIVING;
-
-    // Minimum speed is the smallest step increment
-    speedRatio = speedRatioStep;
 
     return true;
 }
@@ -188,7 +190,9 @@ void Task::updateHook()
             (joystick_command_prev.axes["ABS_X"] != joystick_command.axes["ABS_X"]) ||
             (joystick_command_prev.buttons["BTN_Y"] != joystick_command.buttons["BTN_Y"]) ||
             (joystick_command_prev.buttons["BTN_TL"] != joystick_command.buttons["BTN_TL"]) ||
-            (joystick_command_prev.buttons["BTN_A"] != joystick_command.buttons["BTN_A"])
+            (joystick_command_prev.buttons["BTN_A"] != joystick_command.buttons["BTN_A"]) ||
+            (joystick_command_prev.buttons["BTN_Z"] != joystick_command.buttons["BTN_Z"]) ||
+            (joystick_command_prev.buttons["BTN_TR"] != joystick_command.buttons["BTN_TR"])
         )
         {
 
@@ -204,6 +208,17 @@ void Task::updateHook()
             {
                 // Never goes lower than one step increment
                 speedRatio -= speedRatioStep;
+            }
+
+            // Increase or decrease the angularSpeedRatio
+            if(joystick_command.buttons["BTN_Z"] && angularSpeedRatio < 1.0)
+            {
+                angularSpeedRatio += speedRatioStep;
+            }
+            else if(joystick_command.buttons["BTN_TR"] && angularSpeedRatio > speedRatioStep)
+            {
+                // Never goes lower than one step increment
+                angularSpeedRatio -= speedRatioStep;
             }
 
             // Toggle point turn mode with X
@@ -244,7 +259,7 @@ void Task::updateHook()
                 // In point turn mode the translational speed is always 0,
                 // otherwise it will trigger mode switching
                 motion_command.translation = 0.0;
-                motion_command.rotation = axis_rotation * speedRatio;
+                motion_command.rotation = axis_rotation * angularSpeedRatio;
             }
             else
             {
@@ -252,7 +267,7 @@ void Task::updateHook()
                 if(axis_translation != 0.0)
                 {
                     motion_command.translation = axis_translation * speedRatio;
-                    motion_command.rotation = axis_rotation * speedRatio;
+                    motion_command.rotation = axis_rotation * angularSpeedRatio;
                     // Rotational speed must be reversed when translational speed is negative, or all the wheels will steer the other way
                     if(motion_command.translation < 0)
                     {
@@ -263,7 +278,7 @@ void Task::updateHook()
                 {
                     // Prevent translation speed reaching 0 or it will trigger mode switching
                     motion_command.translation = minSpeedPointTurn;
-                    motion_command.rotation = axis_rotation * speedRatio;
+                    motion_command.rotation = axis_rotation * angularSpeedRatio;
                 }
                 else
                 {

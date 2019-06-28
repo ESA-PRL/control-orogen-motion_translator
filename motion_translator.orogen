@@ -14,6 +14,8 @@ task_context "Task" do
     	doc("Ratio step value")
     property("ptuMaxSpeed", "double", 0.2).
 	    doc("Maximum speed at which to move the PTU axis")
+    property("initialSpeedRatio", "double", 0.2).
+	    doc("Initial speed ratio")
 	
     property("ptuMaxPanAngle", "double", 2.75010971105).
     	doc("Maximum PTU pan angle, in PTU units")
