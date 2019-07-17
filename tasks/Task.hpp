@@ -72,10 +72,7 @@ namespace motion_translator
         double speedRatio;
         double angularSpeedRatio;
         double minSpeedPointTurn;
-
-        // SUPER Hacky way to switch between genericCrabbing and the old implementation
-        double crabForceValue;
-        double ackermannForceValue;
+        
     public:
         Task(std::string const& name = "motion_translator::Task");
         Task(std::string const& name, RTT::ExecutionEngine* engine);
