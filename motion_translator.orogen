@@ -45,6 +45,9 @@ task_context "Task" do
 
     output_port("locomotion_mode", "locomotion_switcher/LocomotionMode").doc("Locomotion mode, to be forwarded to locomotion switcher and to override autonomous l.m. switching.")
 
+    output_port("motion_command_time", "base/Time").doc("time when a motion_command is sent.")
+    #output_port("timestamps", "base/Time").doc("time when joystick_raw is received.")
+    
     # updateHook() executed when the "raw_command" port gets data
     # Get the value with _raw_command.read()
     port_driven
