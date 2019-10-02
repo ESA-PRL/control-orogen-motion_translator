@@ -288,8 +288,10 @@ void Task::updateHook()
                 }
             }
             _locomotion_mode.write(locomotion_mode);
-            _motion_command.write(motion_command);
+            std::cout << "translation=" << speedRatio << std::endl; // see the speed before moving
         }
+        _motion_command.write(motion_command);
+        _motion_command_time.write(joystick_command.time);
     }
 }
 
