@@ -9,4 +9,5 @@
   <depend package="base/cmake" />
   <depend package="drivers/controldev" />
   <depend package="drivers/orogen/controldev" />
+  <depend package="control/orogen/locomotion_switcher" />
 </package>
